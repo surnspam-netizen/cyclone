@@ -7,30 +7,21 @@ on:
 
 jobs:
   build:
-    strategy:
-      matrix:
-        include:
-          - os: windows-latest
-            name: Cyclone-Windows
-            sep: ";"
-          - os: macos-latest
-            name: Cyclone-Mac
-            sep: ":"
-          - os: ubuntu-latest
-            name: Cyclone-Linux
-            sep: ":"
-    runs-on: ${{ matrix.os }}
+    runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - name: Show files
+        shell: bash
+        run: ls -R | head -50
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt pyinstaller
       - name: Build
-        run: pyinstaller --onefile --name Cyclone --add-data "ui${{ matrix.sep }}ui" --collect-all minecraft_launcher_lib launcher.py
+        run: pyinstaller --onefile --name Cyclone --add-data "ui;ui" --collect-all minecraft_launcher_lib launcher.py
       - name: Add mods folder
         shell: bash
         run: |
@@ -38,5 +29,6 @@ jobs:
           cp mods/README.txt dist/mods/
       - uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.name }}
+          name: Cyclone-Windows
           path: dist/
+          
