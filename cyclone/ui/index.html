@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cyclone</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ice-0:#f6fbff; --ice-1:#e6f2fa; --ice-2:#cfe5f4; --ice-3:#a9cde6;
+  --ink:#16314a; --ink-soft:#5b7891; --accent:#4aa3df; --accent-2:#7cc4f0;
+  --glass:rgba(255,255,255,.58); --edge:rgba(255,255,255,.85);
+  --shadow:0 1px 1px rgba(30,70,110,.06),0 8px 16px rgba(30,70,110,.07),0 30px 60px rgba(30,70,110,.12);
+  --font:'Inter',-apple-system,'Segoe UI',system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0}
+html,body{height:100%}
+body{font-family:var(--font);color:var(--ink);overflow:hidden;
+  background:radial-gradient(1200px 700px at 20% 10%,#ffffff 0%,transparent 60%),
+             radial-gradient(900px 700px at 90% 90%,var(--ice-3) 0%,transparent 60%),
+             linear-gradient(160deg,var(--ice-0),var(--ice-2));}
+/* drifting snow */
+.snow{position:fixed;inset:0;pointer-events:none}
+.snow i{position:absolute;top:-10px;width:4px;height:4px;border-radius:50%;background:#fff;opacity:.8;
+  filter:blur(.5px);animation:fall linear infinite}
+@keyframes fall{to{transform:translateY(110vh) translateX(40px)}}
+
+.stage{position:fixed;inset:0;display:grid;place-items:center;perspective:1400px}
+.scene{position:relative;width:min(1080px,94vw);height:min(640px,90vh);transform-style:preserve-3d;
+  transition:transform .15s ease-out}
+.panel{position:absolute;background:var(--glass);backdrop-filter:blur(22px) saturate(140%);
+  -webkit-backdrop-filter:blur(22px) saturate(140%);border:1px solid var(--edge);border-radius:22px;
+  box-shadow:var(--shadow), inset 0 1px 0 rgba(255,255,255,.9);padding:22px;transform-style:preserve-3d;
+  transition:box-shadow .3s}
+.panel:hover{box-shadow:0 2px 2px rgba(30,70,110,.06),0 14px 24px rgba(30,70,110,.10),0 44px 80px rgba(30,70,110,.18),inset 0 1px 0 #fff}
+h2{font-size:11px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:14px}
+label{display:block;font-size:12px;color:var(--ink-soft);margin:12px 0 6px}
+input,select{width:100%;font:inherit;font-size:14px;color:var(--ink);padding:11px 13px;border-radius:12px;
+  border:1px solid rgba(120,160,195,.35);background:rgba(255,255,255,.7);outline:none;transition:.2s}
+input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 4px rgba(74,163,223,.15)}
+.brand{display:flex;align-items:center;gap:10px;font-weight:600;letter-spacing:.32em;font-size:13px}
+.brand svg{width:26px;height:26px}
+
+/* layout */
+#profile{left:0;top:30px;width:290px;transform:translateZ(40px)}
+#play{left:50%;top:70px;width:360px;margin-left:-180px;transform:translateZ(90px);text-align:center;padding:34px 28px}
+#mods{right:0;top:0;width:310px;height:410px;transform:translateZ(60px);display:flex;flex-direction:column}
+#perf{left:20px;bottom:0;width:300px;transform:translateZ(20px)}
+#status{left:50%;bottom:10px;width:360px;margin-left:-180px;transform:translateZ(70px)}
+#folder{right:30px;bottom:0;width:290px;transform:translateZ(30px)}
+
+.big{font-size:30px;font-weight:300;letter-spacing:-.01em;margin:16px 0 4px}
+.sub{color:var(--ink-soft);font-size:13px;margin-bottom:22px}
+button{font:inherit;cursor:pointer;border:0}
+.play-btn{width:100%;padding:16px;border-radius:16px;font-weight:600;font-size:15px;letter-spacing:.08em;color:#fff;
+  background:linear-gradient(135deg,var(--accent),var(--accent-2));
+  box-shadow:0 10px 24px rgba(74,163,223,.40),inset 0 1px 0 rgba(255,255,255,.5);transition:.2s}
+.play-btn:hover{transform:translateY(-2px);box-shadow:0 16px 32px rgba(74,163,223,.50),inset 0 1px 0 rgba(255,255,255,.5)}
+.play-btn:disabled{opacity:.55;transform:none;cursor:wait}
+.ghost{padding:10px 14px;border-radius:12px;background:rgba(255,255,255,.7);border:1px solid rgba(120,160,195,.35);
+  color:var(--ink);font-size:13px;transition:.2s;width:100%}
+.ghost:hover{background:#fff}
+.pill{display:inline-block;font-size:11px;padding:4px 10px;border-radius:99px;background:rgba(74,163,223,.12);color:#2b7fb8;font-weight:500}
+
+.modlist{overflow:auto;flex:1;margin:0 -8px;padding:0 8px}
+.mod{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px solid rgba(120,160,195,.15)}
+.mod b{font-weight:500;font-size:13px;display:block}
+.mod small{color:var(--ink-soft);font-size:11px}
+.sw{position:relative;width:38px;height:22px;flex:none}
+.sw input{opacity:0;position:absolute;inset:0;width:100%;height:100%;cursor:pointer;z-index:2;margin:0}
+.sw span{position:absolute;inset:0;border-radius:99px;background:#c3d8e8;transition:.25s}
+.sw span:after{content:"";position:absolute;left:3px;top:3px;width:16px;height:16px;border-radius:50%;background:#fff;
+  box-shadow:0 1px 3px rgba(0,0,0,.2);transition:.25s}
+.sw input:checked+span{background:var(--accent)}
+.sw input:checked+span:after{transform:translateX(16px)}
+.sw input:disabled+span{opacity:.5}
+
+input[type=range]{padding:0;height:6px;accent-color:var(--accent);box-shadow:none}
+.bar{height:6px;border-radius:99px;background:rgba(120,160,195,.2);overflow:hidden;margin-top:10px}
+.bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--accent-2));transition:width .3s}
+#statusText{font-size:13px;color:var(--ink)}
+.row{display:flex;justify-content:space-between;align-items:center}
+
+/* splash */
+#splash{position:fixed;inset:0;z-index:50;display:grid;place-items:center;text-align:center;
+  background:radial-gradient(900px 600px at 50% 40%,#fff,var(--ice-2));transition:opacity 1s ease,visibility 1s}
+#splash.hide{opacity:0;visibility:hidden}
+#splash svg{width:64px;height:64px;margin-bottom:26px;animation:spin 14s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+#splash h1{font-weight:200;font-size:clamp(34px,6vw,68px);letter-spacing:-.02em;color:var(--ink);
+  opacity:0;animation:rise 1.2s .3s forwards}
+#splash h1 + h1{font-weight:500;color:var(--accent);animation-delay:1s}
+@keyframes rise{from{opacity:0;transform:translateY(14px);filter:blur(6px)}to{opacity:1;transform:none;filter:none}}
+@media(max-width:900px){.scene{height:auto;display:flex;flex-direction:column;gap:14px;overflow:auto;transform:none!important}
+ .panel{position:relative;inset:auto;width:100%!important;margin:0!important;transform:none!important;height:auto!important}
+ body{overflow:auto}.stage{position:static;display:block;padding:14px}}
+</style>
+</head>
+<body>
+<div class="snow" id="snow"></div>
+
+<div id="splash">
+  <div>
+    <svg viewBox="0 0 64 64" fill="none" stroke="#4aa3df" stroke-width="3" stroke-linecap="round">
+      <path d="M32 8c13 0 22 9 22 19 0 8-6 13-13 13-6 0-10-4-10-9 0-4 3-7 7-7"/>
+      <path d="M32 56C19 56 10 47 10 37c0-8 6-13 13-13 6 0 10 4 10 9 0 4-3 7-7 7" opacity=".55"/>
+    </svg>
+    <h1>Stay cool.</h1>
+    <h1>Fly with Cyclone.</h1>
+  </div>
+</div>
+
+<div class="stage"><div class="scene" id="scene">
+
+  <section class="panel" id="profile">
+    <div class="brand">
+      <svg viewBox="0 0 64 64" fill="none" stroke="#4aa3df" stroke-width="4" stroke-linecap="round">
+        <path d="M32 8c13 0 22 9 22 19 0 8-6 13-13 13-6 0-10-4-10-9 0-4 3-7 7-7"/>
+        <path d="M32 56C19 56 10 47 10 37c0-8 6-13 13-13 6 0 10 4 10 9 0 4-3 7-7 7" opacity=".55"/>
+      </svg>CYCLONE
+    </div>
+    <label style="margin-top:24px">Offline profile</label>
+    <input id="username" maxlength="16" placeholder="Username" spellcheck="false">
+    <label>Version</label>
+    <select id="version"></select>
+    <div style="margin-top:16px"><span class="pill">Offline mode</span> <span class="pill">Fabric</span></div>
+  </section>
+
+  <section class="panel" id="play">
+    <span class="pill">Ready to fly</span>
+    <div class="big">Stay cool.</div>
+    <div class="sub">Smooth, quiet, fast.</div>
+    <button class="play-btn" id="playBtn">PLAY</button>
+  </section>
+
+  <section class="panel" id="mods">
+    <h2>Inbuilt mods</h2>
+    <div class="modlist" id="modlist"></div>
+  </section>
+
+  <section class="panel" id="perf">
+    <h2>Memory</h2>
+    <div class="row"><span style="font-size:22px;font-weight:300" id="ramVal">4 GB</span>
+      <span class="pill">JVM tuned</span></div>
+    <label style="margin:12px 0 4px">Allocated RAM</label>
+    <input type="range" id="ram" min="1024" max="16384" step="512">
+  </section>
+
+  <section class="panel" id="status">
+    <h2>Status</h2>
+    <div id="statusText">Ready</div>
+    <div class="bar"><i id="barFill"></i></div>
+  </section>
+
+  <section class="panel" id="folder">
+    <h2>Mod folder</h2>
+    <div style="font-size:12px;color:var(--ink-soft);margin-bottom:12px" id="userMods">Drop .jar files into <b>mods/</b></div>
+    <button class="ghost" id="openMods">Open mods folder</button>
+  </section>
+
+</div></div>
+
+<script>
+const $=id=>document.getElementById(id);
+let settings=null;
+
+// snow
+(()=>{const s=$('snow');for(let i=0;i<34;i++){const e=document.createElement('i');
+ const z=Math.random();e.style.left=Math.random()*100+'vw';e.style.width=e.style.height=(2+z*4)+'px';
+ e.style.opacity=.3+z*.6;e.style.animationDuration=(9+Math.random()*14)+'s';e.style.animationDelay=(-Math.random()*20)+'s';s.appendChild(e)}})();
+
+// splash
+setTimeout(()=>$('splash').classList.add('hide'),3400);
+
+// depth parallax
+const scene=$('scene');
+addEventListener('mousemove',e=>{
+  const x=(e.clientX/innerWidth-.5), y=(e.clientY/innerHeight-.5);
+  scene.style.transform=`rotateY(${x*6}deg) rotateX(${-y*5}deg)`;
+});
+
+async function api(path,body){
+  const r=await fetch(path,body?{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}:{});
+  return r.json();
+}
+function save(){
+  settings.username=$('username').value; settings.version=$('version').value; settings.ram_mb=+$('ram').value;
+  api('/api/settings',settings);
+}
+function renderMods(mods){
+  const el=$('modlist'); el.innerHTML='';
+  mods.forEach(m=>{
+    const d=document.createElement('div'); d.className='mod';
+    d.innerHTML=`<div><b>${m.name}</b><small>${m.desc}</small></div>
+      <label class="sw"><input type="checkbox" ${settings.mods[m.slug]||m.locked?'checked':''} ${m.locked?'disabled':''}><span></span></label>`;
+    d.querySelector('input').onchange=e=>{settings.mods[m.slug]=e.target.checked;save()};
+    el.appendChild(d);
+  });
+}
+async function init(){
+  const [st,vs]=await Promise.all([api('/api/state'),api('/api/versions')]);
+  settings=st.settings;
+  $('username').value=settings.username;
+  $('version').innerHTML=vs.map(v=>`<option ${v===settings.version?'selected':''}>${v}</option>`).join('');
+  $('ram').value=settings.ram_mb; $('ramVal').textContent=(settings.ram_mb/1024).toFixed(1).replace('.0','')+' GB';
+  renderMods(st.mods);
+  ['username','version'].forEach(i=>$(i).onchange=save);
+  $('ram').oninput=e=>{$('ramVal').textContent=(e.target.value/1024).toFixed(1).replace('.0','')+' GB'};
+  $('ram').onchange=save;
+  $('playBtn').onclick=async()=>{save();await api('/api/launch',{})};
+  $('openMods').onclick=async()=>{const r=await api('/api/open-mods',{});$('userMods').textContent=r.path};
+  poll();
+}
+async function poll(){
+  try{
+    const s=await api('/api/state');
+    $('statusText').textContent=s.status;
+    $('barFill').style.width=s.max?Math.min(100,s.progress/s.max*100)+'%':(s.busy?'30%':'0');
+    const b=$('playBtn'); b.disabled=s.busy||s.running;
+    b.textContent=s.running?'RUNNING':s.busy?'PREPARING…':'PLAY';
+    if(s.user_mods.length)$('userMods').innerHTML='Your mods: <b>'+s.user_mods.join(', ')+'</b>';
+  }catch(e){}
+  setTimeout(poll,900);
+}
+init();
+</script>
+</body>
+</html>
